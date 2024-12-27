@@ -1,0 +1,61 @@
+import os
+import shutil
+
+def move_file_with_collision_handling(src, dst):
+    base, ext = os.path.splitext(dst)
+    counter = 1
+    while os.path.exists(dst):
+        dst = f"{base} ({counter}){ext}"
+        counter += 1
+    shutil.move(src, dst)
+
+def organize_downloads(download_folder, destination_folder):
+    # Definește categoriile și extensiile lor
+    categories = {
+        "Imagini": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".tiff"],
+        "Documente": [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv"],
+        "Videoclipuri": [".mp4", ".mkv", ".avi", ".mov", ".wmv"],
+        "Arhive": [".zip", ".rar", ".tar", ".gz", ".7z"],
+        "Audio": [".mp3", ".wav", ".aac", ".flac"],
+        "Executabile": [".exe", ".msi", ".bat", ".sh"],
+        "Altele": []
+    }
+
+    if not os.path.exists(download_folder):
+        print(f"Folderul specificat nu există: {download_folder}")
+        return
+
+    # Creează directoare pentru fiecare categorie în destinație
+    for category in categories:
+        category_folder = os.path.join(destination_folder, category)
+        if not os.path.exists(category_folder):
+            os.makedirs(category_folder)
+
+    stats = {category: 0 for category in categories}
+
+    # Mută fișierele în directoarele corespunzătoare
+    for file_name in os.listdir(download_folder):
+        file_path = os.path.join(download_folder, file_name)
+        if os.path.isfile(file_path):  # Asigură-te că este un fișier, nu un director
+            moved = False
+            for category, extensions in categories.items():
+                if any(file_name.lower().endswith(ext) for ext in extensions):
+                    move_file_with_collision_handling(file_path, os.path.join(destination_folder, category, file_name))
+                    stats[category] += 1
+                    moved = True
+                    break
+            # Dacă fișierul nu se potrivește cu nicio categorie, îl mutăm în "Altele"
+            if not moved:
+                move_file_with_collision_handling(file_path, os.path.join(destination_folder, "Altele", file_name))
+                stats["Altele"] += 1
+
+    print("Organizare completă! Fișierele au fost mutate în directoarele corespunzătoare:")
+    for category, count in stats.items():
+        print(f"  {category}: {count} fișiere")
+
+if __name__ == "__main__":
+    # Specifică calea către folderul Downloads (C:)
+    download_folder = "C:\\Downloads"
+    # Specifică calea către folderul Descărcate (D:)
+    destination_folder = "D:\\Descărcate"
+    organize_downloads(download_folder, destination_folder)
